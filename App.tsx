@@ -66,7 +66,7 @@ const App: React.FC = () => {
       {/* Phase 1 & 2: Interaction */}
       {phase === 'setup' && (
         <div className="z-20 flex flex-col items-center">
-          <div className="text-[120px] mb-8 select-none">💐</div>
+          <div className="text-[120px] mb-8 select-none animate-bounce">💐</div>
           <p 
             className="text-2xl font-bold mb-8 transition-opacity duration-300"
             style={{ color: COLORS.CRUSHED_BERRY }}
@@ -97,7 +97,7 @@ const App: React.FC = () => {
 
       {/* Phase 4: Reveal */}
       {phase === 'reveal' && (
-        <div className="z-50 animate-reveal">
+        <div className="z-50 px-4 flex justify-center w-full">
           <LoveLetter />
         </div>
       )}

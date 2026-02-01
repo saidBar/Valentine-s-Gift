@@ -1,12 +1,15 @@
+
 import React, { useEffect, useRef } from 'react';
-import { COLORS } from '../constants'; // Assuming you have this
+import { COLORS } from '../constants';
 
 interface Particle {
   x: number;
   y: number;
   vx: number;
   vy: number;
-  size: number; // We will use this for scale now
+  gravity: number;
+  friction: number;
+  size: number; 
   color: string;
   emoji: string;
   rotation: number;
@@ -21,29 +24,30 @@ export const ParticleSystem: React.FC = () => {
   const requestRef = useRef<number>();
 
   const createParticles = (width: number, height: number) => {
-    // 1. FIX: Clear existing particles so we don't get duplicates in React Strict Mode
     particles.current = []; 
     
-    const count = 300; // You can lower this to 150 if it's still slow on mobile
+    const count = 300; 
     const centerX = width / 2;
     const centerY = height / 2;
     
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      // Increased speed slightly for a more dramatic "pop"
-      const speed = Math.random() * 12 + 6; 
+      const speed = Math.random() * 15 + 5; 
       
       particles.current.push({
         x: centerX,
         y: centerY,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        // We will use 1 as base scale, so size becomes a multiplier (e.g., 0.8 to 1.5)
-        size: (Math.random() * 0.8) + 0.8, 
+        // Varied gravity: some fall fast, some float like petals
+        gravity: (Math.random() * 0.07) + 0.03, 
+        // Varied friction: simulates different drag/air resistance
+        friction: (Math.random() * 0.04) + 0.94, 
+        size: (Math.random() * 0.8) + 0.7, 
         color: Math.random() > 0.5 ? COLORS.CRUSHED_BERRY : COLORS.RASPBERRY,
         emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
         rotation: Math.random() * Math.PI * 2,
-        rotationSpeed: (Math.random() - 0.5) * 0.1,
+        rotationSpeed: (Math.random() - 0.5) * 0.15,
       });
     }
   };
@@ -51,26 +55,25 @@ export const ParticleSystem: React.FC = () => {
   const update = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.clearRect(0, 0, width, height);
     
-    // 2. OPTIMIZATION: Set the font ONCE per frame, not 300 times.
-    // We use a large base size (30px) and scale it down/up later.
     ctx.font = "30px serif";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     particles.current.forEach((p) => {
+      // Apply per-particle physics
+      p.vx *= p.friction;
+      p.vy *= p.friction;
+      p.vy += p.gravity;
+      
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.08; // Slightly heavier gravity for better feel
-      p.vx *= 0.98; // Slightly more friction
+      
       p.rotation += p.rotationSpeed;
 
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(p.rotation);
-      
-      // 3. OPTIMIZATION: Use scale instead of changing font string
       ctx.scale(p.size, p.size); 
-      
       ctx.fillText(p.emoji, 0, 0);
       ctx.restore();
     });
@@ -82,12 +85,10 @@ export const ParticleSystem: React.FC = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d', { alpha: true }); // optimize for transparency
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
     const handleResize = () => {
-      // Handle high-DPI displays (Retina screens) for sharpness, 
-      // but if performance is key, standard 1x is faster.
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
